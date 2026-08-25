@@ -1,0 +1,35 @@
+# Simulation executables
+
+*_sim
+*.vvp
+
+# Waveform files
+
+*.vcd
+*.fst
+*.gtkw
+
+# Editor backup files
+
+*.save
+*~
+
+# Python cache
+
+__pycache__/
+*.pyc
+
+# Yosys temporary files
+
+abc-temp-*/
+*.blif
+*.json
+
+# Operating system files
+
+.DS_Store
+Thumbs.db
+backup_baseline/
+
+# Windows alternate data stream metadata
+*:Zone.Identifier

@@ -6,9 +6,9 @@ module configurable_multiplier (
 );
 
     logic signed [15:0] exact_product;
-    logic signed [7:0]  a_medium;
-    logic signed [7:0]  b_medium;
-    logic signed [15:0] medium_product;
+    logic signed [6:0]  a_medium;
+    logic signed [6:0]  b_medium;
+    logic signed [13:0] medium_product;
 
     logic signed [5:0]  a_strong;
     logic signed [5:0]  b_strong;
@@ -22,7 +22,7 @@ module configurable_multiplier (
         // Keep upper 7 bits and discard 1 LSB from each operand.
         a_medium = a >>> 1;
         b_medium = b >>> 1;
-        medium_product = (a_medium * b_medium) <<< 2;
+        medium_product = a_medium * b_medium;
 
         // Strong approximation:
         // Keep upper 6 bits and discard 2 LSBs from each operand.
@@ -32,7 +32,7 @@ module configurable_multiplier (
 
         case (mode)
             2'b00: p = exact_product;
-            2'b01: p = medium_product;
+            2'b01: p = medium_product <<< 2;
             2'b10: p = strong_product <<< 4;
             2'b11: p = exact_product;
             default: p = exact_product;

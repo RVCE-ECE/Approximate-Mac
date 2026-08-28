@@ -1,88 +1,119 @@
+
 # Configurable Approximate Multiply-Accumulate (MAC)
 
 ## Overview
 
-This project implements a configurable signed 8-bit Multiply-Accumulate (MAC) architecture with runtime-selectable exact and approximate multiplication modes.
+This project implements a configurable signed INT8 Multiply-Accumulate (MAC) architecture with runtime-selectable exact and approximate multiplication modes.
 
-The design explores the trade-off between **numerical accuracy and hardware cost**. It includes exact 8×8 multiplication, a medium architectural approximation based on operand precision reduction, a stronger approximation mode, a configurable multiplier, and a clocked configurable MAC.
-
-The design was verified using exhaustive simulation and synthesized using the SKY130 standard-cell library.
+The objective is to quantify the trade-off between numerical accuracy and hardware cost. The project includes exhaustive functional verification and SKY130 standard-cell synthesis.
 
 ---
 
-## Key Features
+## Operating Modes
 
-- Signed INT8 × INT8 multiplication
-- Exact multiplication mode
-- Medium and strong approximation modes
-- Runtime-selectable accuracy modes
-- Signed INT32 accumulation
-- Reset, clear, and enable controls
-- Exhaustive functional verification
-- SKY130 standard-cell technology mapping
+| Mode | Operation                               |
+| ---- | --------------------------------------- |
+| `00` | Exact signed INT8 × INT8 multiplication |
+| `01` | Medium architectural approximation      |
+| `10` | Strong architectural approximation      |
+| `11` | Exact default                           |
 
 ---
 
-## Architecture
+## Approximation Method
 
-![Configurable MAC Architecture](docs/figures/configurable_mac_architecture.png)
+### Exact Mode
 
-### Operating Modes
+The full signed INT8 × INT8 multiplication is performed without approximation.
 
-| Mode | Operation |
-| ---- | --------- |
-| `00` | Exact multiplication |
-| `01` | Medium approximation: discard 1 LSB from each operand before multiplication |
-| `10` | Strong approximation: discard 2 LSBs from each operand before multiplication |
-| `11` | Reserved / exact default |
+### Medium Approximation
+
+Each signed operand is arithmetically right-shifted by 1 bit. The resulting 7-bit operands are multiplied, and the product is left-shifted by 2 bits to restore the binary weight.
+
+```text
+A' = A >>> 1
+B' = B >>> 1
+P  = (A' × B') <<< 2
+```
+
+This implements an effective signed 7-bit × 7-bit multiplication.
+
+### Strong Approximation
+
+Each signed operand is arithmetically right-shifted by 2 bits. The resulting 6-bit operands are multiplied, and the product is left-shifted by 4 bits to restore the binary weight.
+
+```text
+A' = A >>> 2
+B' = B >>> 2
+P  = (A' × B') <<< 4
+```
+
+This implements an effective signed 6-bit × 6-bit multiplication.
 
 ---
 
-## Results
+## Accuracy Results
 
-### Verified SKY130 Hardware Comparison
+All 65,536 possible signed INT8 input combinations were evaluated.
 
-| Design | Cells | Chip Area |
-| ------ | ----: | --------: |
-| Exact Multiplier | 295 | 2310.966400 |
-| Medium Architectural Approximate Multiplier | 211 | 1776.704000 |
+| Mode   | Error Rate |        MAE |          MSE | Maximum Error |
+| ------ | ---------: | ---------: | -----------: | ------------: |
+| Exact  |  0.000000% |   0.000000 |     0.000000 |             0 |
+| Medium | 74.609375% |  53.333984 |  5461.750000 |           255 |
+| Strong | 93.164062% | 149.784302 | 38236.250000 |           759 |
 
-The medium architectural approximation achieved:
+---
 
-- **84 fewer cells**
-- **28.475% cell-count reduction**
-- **23.118% area reduction**
+## SKY130 Synthesis Results
 
-![SKY130 Area Comparison](docs/figures/sky130_area_comparison.png)
+| Design                        | Cells |   Chip Area |
+| ----------------------------- | ----: | ----------: |
+| Exact Multiplier              |   295 | 2310.966400 |
+| Medium Approximate Multiplier |   211 | 1776.704000 |
+| Strong Approximate Multiplier |   149 | 1259.958400 |
+| Configurable Multiplier       |   636 | 5342.624000 |
+| Configurable MAC              |   885 | 7213.168000 |
 
-![SKY130 Cell-Count Comparison](docs/figures/sky130_cell_count_comparison.png)
+The configurable MAC result includes sequential-cell mapping for the accumulator.
 
-### Approximation Accuracy
+---
 
-| Mode | Error Rate | MAE | Maximum Error |
-| ---- | ---------: | ---: | ------------: |
-| Exact | 0.000000% | 0.000000 | 0 |
-| Medium | 74.609375% | 53.333984 | 255 |
-| Strong | 93.164062% | 149.784302 | 759 |
+## Hardware Savings vs Exact Multiplier
 
-The medium approximation was also measured with:
+| Approximation | Cell Reduction | Area Reduction |
+| ------------- | -------------: | -------------: |
+| Medium        |        28.475% |        23.118% |
+| Strong        |        49.492% |        45.479% |
 
-- **MSE: 5,461.750000**
+---
 
-![MAE Comparison](docs/figures/accuracy_mae_comparison.png)
+## Verification
 
-![Error Rate Comparison](docs/figures/accuracy_error_rate_comparison.png)
+### Exact Multiplier
 
-These results demonstrate the expected trade-off: stronger approximation increases numerical error while reducing multiplication precision.
+All 65,536 signed INT8 input combinations were tested.
 
-### Configurable Design Synthesis
+**Result: PASS — 0 errors**
 
-| Design | Cells | Chip Area |
-| ------ | ----: | --------: |
-| Configurable Multiplier | 647 | 5428.956800 |
-| Configurable MAC | 808 | 6264.758400 |
+### Configurable Multiplier
 
-The configurable designs require additional hardware because they support multiple operating modes and selection logic.
+All 65,536 signed INT8 input combinations were evaluated for every operating mode.
+
+### Configurable MAC
+
+The self-checking testbench verifies:
+
+* Reset
+* Exact accumulation
+* Signed negative multiplication
+* Medium approximation
+* Strong approximation
+* Clear operation
+* Enable/hold behavior
+
+Final result:
+
+**PASS: CONFIGURABLE MAC SELF-CHECK PASSED.**
 
 ---
 
@@ -90,53 +121,45 @@ The configurable designs require additional hardware because they support multip
 
 ```text
 approximate_mac/
-├── rtl/                    # SystemVerilog RTL designs
-├── tb/                     # Self-checking and exhaustive testbenches
-├── scripts/                # Synthesis scripts
-├── results/
-│   ├── synthesis/          # Synthesis logs
-│   ├── netlists/           # Technology-mapped netlists
-│   └── summary.md          # Final project results
-├── docs/
-│   ├── figures/            # Architecture and comparison figures
-│   └── info.md             # Credits and acknowledgements
+├── rtl/        # SystemVerilog RTL
+├── tb/         # Self-checking testbenches
+├── scripts/    # Synthesis scripts
+├── results/    # Synthesis logs and netlists
+├── docs/       # Documentation and figures
 └── README.md
+```
 
-Then verify the changes:
+---
+
+## Running Configurable MAC Verification
 
 ```bash
-git diff --stat
-git status
-Verification
+iverilog -g2012 -s configurable_mac_check_tb \
+    -o configurable_mac_check_sim \
+    rtl/configurable_mac.sv \
+    rtl/configurable_multiplier.sv \
+    tb/configurable_mac_check_tb.sv
 
-The exact multiplier was exhaustively tested using all 65,536 possible signed INT8 input combinations.
+vvp configurable_mac_check_sim
+```
 
-The configurable multiplier was also exhaustively characterized across its operating modes.
+Expected result:
 
-The configurable MAC was verified using a self-checking testbench covering:
-
-Reset
-Exact multiplication
-Negative multiplication
-Approximate modes
-Accumulation
-Clear
-Enable/hold operation
-
-Final result:
-
+```text
 PASS: CONFIGURABLE MAC SELF-CHECK PASSED.
-Technology
-RTL: SystemVerilog
-Simulation: Icarus Verilog
-Synthesis: Yosys
-Technology Mapping: ABC
-PDK: SKY130
-Standard Cell Library: sky130_fd_sc_hd
-Conclusion
+```
 
-This project demonstrates a configurable approximate MAC that can dynamically trade numerical accuracy for reduced multiplication precision and hardware complexity.
+---
 
-The medium architectural approximate multiplier achieved measurable savings of 28.475% in cell count and 23.118% in SKY130 mapped area compared with the exact multiplier. The configurable MAC allows the operating mode to be selected at runtime, supporting exact, medium-approximate, and strong-approximate computation.
+## Conclusion
 
-The repository is maintained as a development repository and can be adapted to the official template and interface requirements of a future Tiny Tapeout SKY shuttle.
+This project demonstrates a configurable approximate computing architecture that dynamically trades numerical accuracy for hardware cost.
+
+The architectural approximations show a clear accuracy-versus-hardware trade-off:
+
+* **Medium mode:** 28.475% cell-count reduction and 23.118% area reduction.
+* **Strong mode:** 49.492% cell-count reduction and 45.479% area reduction.
+
+The configurable MAC supports runtime selection between exact and approximate computation with signed INT32 accumulation.
+
+The design was exhaustively characterized at the multiplier level, verified with a self-checking MAC testbench, and synthesized using the SKY130 HD standard-cell library.

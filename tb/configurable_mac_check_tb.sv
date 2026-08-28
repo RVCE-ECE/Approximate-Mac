@@ -71,49 +71,55 @@ module configurable_mac_check_tb;
     endfunction
 
     task automatic apply_and_check(
-        input signed [7:0] next_a,
-        input signed [7:0] next_b,
-        input        [1:0] next_mode,
-        input               next_enable,
-        input               next_clear
-    );
-        begin
-            @(negedge clk);
+    input signed [7:0] next_a,
+    input signed [7:0] next_b,
+    input        [1:0] next_mode,
+    input              next_enable,
+    input              next_clear
+);
+    begin
+        // Apply inputs safely before the active clock edge
+        @(negedge clk);
 
-            a      = next_a;
-            b      = next_b;
-            mode   = next_mode;
-            enable = next_enable;
-            clear  = next_clear;
+        a      = next_a;
+        b      = next_b;
+        mode   = next_mode;
+        enable = next_enable;
+        clear  = next_clear;
 
-            expected_product = calc_product(next_a, next_b, next_mode);
+        // Calculate expected accumulator value
+        if (reset)
+            expected_acc = 32'sd0;
+        else if (next_clear)
+            expected_acc = 32'sd0;
+        else if (next_enable)
+            expected_acc = expected_acc +
+                           calc_product(next_a, next_b, next_mode);
 
-            if (reset)
-                expected_acc = 32'sd0;
-            else if (next_clear)
-                expected_acc = 32'sd0;
-            else if (next_enable)
-                expected_acc = expected_acc + expected_product;
+        // MAC updates on this rising edge
+        @(posedge clk);
+        #1;
 
-            @(posedge clk);
-            #1;
-
-            if (acc !== expected_acc) begin
-                $display(
-                    "ERROR: Time=%0t Mode=%b A=%0d B=%0d Expected_ACC=%0d Got_ACC=%0d",
-                    $time, next_mode, next_a, next_b, expected_acc, acc
-                );
-                errors = errors + 1;
-            end
-            else begin
-                $display(
-                    "PASS: Time=%0t Mode=%b A=%0d B=%0d ACC=%0d",
-                    $time, next_mode, next_a, next_b, acc
-                );
-            end
+        if (acc !== expected_acc) begin
+            $display(
+                "ERROR: Time=%0t Mode=%b A=%0d B=%0d Expected_ACC=%0d Got_ACC=%0d",
+                $time, next_mode, next_a, next_b, expected_acc, acc
+            );
+            errors = errors + 1;
         end
-    endtask
+        else begin
+            $display(
+                "PASS: Time=%0t Mode=%b A=%0d B=%0d ACC=%0d",
+                $time, next_mode, next_a, next_b, acc
+            );
+        end
 
+        // Prevent the same product from being accumulated again
+        @(negedge clk);
+        enable = 1'b0;
+        clear  = 1'b0;
+    end
+endtask
     initial begin
         errors = 0;
         expected_acc = 0;

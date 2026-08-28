@@ -31,6 +31,7 @@ opt
 techmap
 opt
 
+dfflibmap -liberty $LIB
 abc -liberty $LIB
 
 clean

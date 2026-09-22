@@ -1,9 +1,17 @@
 project:
-  title: "Configurable Approximate MAC"
-  author: "shrilakshmi"
-  description: "A signed INT8 configurable approximate multiply-accumulate architecture"
-  language: "SystemVerilog"
-  clock_hz: 10000000
+  title:        "Configurable Approximate MAC"
+  author:       "shrilakshmi"
+  discord:      ""
+  description:  "A signed INT8 configurable approximate multiply-accumulate architecture"
+  language:     "SystemVerilog"
+  clock_hz:     10000000
+  tiles:        "1x1"
+  top_module:   "tt_um_approximate_mac"
+
+  source_files:
+    - "configurable_mac.sv"
+    - "configurable_multiplier.sv"
+    - "tt_um_approximate_mac.sv"
 
 pinout:
   ui[0]: "Operand A bit 0"
@@ -32,3 +40,5 @@ pinout:
   uio[5]: "Operand B bit 5"
   uio[6]: "Operand B bit 6"
   uio[7]: "Operand B bit 7"
+
+yaml_version: 6

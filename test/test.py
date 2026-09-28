@@ -2,8 +2,7 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles, FallingEdge, RisingEdge, ReadOnly
-
+from cocotb.triggers import ClockCycles, FallingEdge, RisingEdge, ReadOnly, Timer
 
 def signed8_to_u8(value):
     """Encode a signed integer into the 8-bit input representation."""
@@ -24,6 +23,7 @@ async def test_project(dut):
     # Reset the MAC.
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 2)
+    await Timer(2, unit="ns")
     await ReadOnly()
 
     assert dut.uo_out.value.to_unsigned() == 0
@@ -51,6 +51,7 @@ async def test_project(dut):
 
         # MAC updates on the rising edge.
         await RisingEdge(dut.clk)
+        await Timer(2, unit="ns")
         await ReadOnly()
 
         expected_acc += a * b

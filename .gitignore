@@ -33,3 +33,12 @@ backup_baseline/
 
 # Windows alternate data stream metadata
 *:Zone.Identifier
+
+# Local Python virtual environment
+.venv/
+
+# TinyTapeout test artifacts
+/test/results.xml
+/test/tb.fst
+/test/sim_build/
+/test/__pycache__/

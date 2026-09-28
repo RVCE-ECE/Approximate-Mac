@@ -121,11 +121,14 @@ Final result:
 
 ```text
 approximate_mac/
-├── rtl/        # SystemVerilog RTL
-├── tb/         # Self-checking testbenches
+├── src/        # TinyTapeout top-level wrapper and source RTL
+├── test/       # TinyTapeout cocotb test infrastructure
+├── rtl/        # Original SystemVerilog RTL
+├── tb/         # Original self-checking testbenches
 ├── scripts/    # Synthesis scripts
 ├── results/    # Synthesis logs and netlists
 ├── docs/       # Documentation and figures
+├── info.yaml   # TinyTapeout project metadata
 └── README.md
 ```
 

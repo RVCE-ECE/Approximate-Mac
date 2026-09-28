@@ -24,6 +24,7 @@ __pycache__/
 abc-temp-*/
 *.blif
 *.json
+!src/config.json
 
 # Operating system files
 

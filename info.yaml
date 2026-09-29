@@ -1,6 +1,6 @@
 project:
   title:        "Configurable Approximate MAC"
-  author:       "shrilakshmi"
+  author: "Shrilakshmi V Singanamalli, Dhanishta Nathan, Shylashree N, R V College of Engineering"
   discord:      ""
   description:  "A signed INT8 configurable approximate multiply-accumulate architecture"
   language:     "SystemVerilog"
